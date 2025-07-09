@@ -3,6 +3,7 @@ import pandas as pd
 import os
 from datetime import date
 from io import BytesIO
+from fpdf import FPDF
 
 # Constants
 DATA_DIR = "data"
