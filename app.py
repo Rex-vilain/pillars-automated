@@ -3,7 +3,6 @@ import pandas as pd
 import os
 from datetime import date
 from io import BytesIO
-from fpdf import FPDF
 
 # Constants
 DATA_DIR = "data"
@@ -66,6 +65,76 @@ def to_excel(df_dict):
             df.to_excel(writer, sheet_name=sheet_name, index=False)
     processed_data = output.getvalue()
     return processed_data
+
+def generate_pdf_report(stock_df, accom_df, expenses_df, money_paid, money_invested, profit, date_str):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(0, 10, f"Pillars Bar & Restaurant Report - {date_str}", ln=True, align="C")
+
+    # Stock Sheet Section
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "Stock Sheet", ln=True)
+    pdf.set_font("Arial", size=10)
+
+    # Add stock data table header
+    cols = list(stock_df.columns)
+    col_width = pdf.w / (len(cols) + 1)
+    for col in cols:
+        pdf.cell(col_width, 8, str(col), border=1)
+    pdf.ln()
+
+    # Add stock data rows
+    for idx, row in stock_df.iterrows():
+        for col in cols:
+            pdf.cell(col_width, 8, str(row[col]), border=1)
+        pdf.ln()
+
+    pdf.ln(10)
+
+    # Accommodation Section
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "Accommodation Data", ln=True)
+    pdf.set_font("Arial", size=10)
+
+    cols = list(accom_df.columns)
+    col_width = pdf.w / (len(cols) + 1)
+    for col in cols:
+        pdf.cell(col_width, 8, str(col), border=1)
+    pdf.ln()
+    for idx, row in accom_df.iterrows():
+        for col in cols:
+            pdf.cell(col_width, 8, str(row[col]), border=1)
+        pdf.ln()
+
+    pdf.ln(10)
+
+    # Expenses Section
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "Expenses", ln=True)
+    pdf.set_font("Arial", size=10)
+    cols = list(expenses_df.columns)
+    col_width = pdf.w / (len(cols) + 1)
+    for col in cols:
+        pdf.cell(col_width, 8, str(col), border=1)
+    pdf.ln()
+    for idx, row in expenses_df.iterrows():
+        for col in cols:
+            pdf.cell(col_width, 8, str(row[col]), border=1)
+        pdf.ln()
+
+    pdf.ln(10)
+
+    # Money Transactions and Summary
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(0, 10, "Money Transactions & Summary", ln=True)
+    pdf.set_font("Arial", size=12)
+    pdf.cell(0, 10, f"Money Paid to Boss: KES {money_paid:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Money Invested: KES {money_invested:,.2f}", ln=True)
+    pdf.cell(0, 10, f"Profit: KES {profit:,.2f}", ln=True)
+
+    return pdf.output(dest='S').encode('latin1')  # return bytes
 
 # Streamlit App
 st.set_page_config(page_title="Pillars Bar Management App", layout="wide")
@@ -177,6 +246,23 @@ if app_mode == "Data Entry":
     st.markdown(f"Money Invested: KES {money_invested_input:,.2f}")
     st.markdown(f"Profit: KES {profit:,.2f}")
 
+if st.button("Generate PDF Report"):
+    pdf_bytes = generate_pdf_report(
+        stock_df=edited_stock_df,
+        accom_df=edited_accom_df,
+        expenses_df=edited_expenses_df,
+        money_paid=money_paid_input,
+        money_invested=money_invested_input,
+        profit=profit,
+        date_str=date_str
+    )
+    st.download_button(
+        label="Download PDF Report",
+        data=pdf_bytes,
+        file_name=f"Pillars_Report_{date_str}.pdf",
+        mime="application/pdf"
+    )
+    
 elif app_mode == "View Past Reports":
     st.header("📁 View Past Reports")
 
